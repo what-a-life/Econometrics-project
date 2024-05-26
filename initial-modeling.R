@@ -29,7 +29,7 @@ library("BaylorEdPsych")
 library("htmltools")
 library("aod")
 library("logistf")
-
+library("car")
 library(generalhoslem)
 #library(gofcat)
 
@@ -114,6 +114,7 @@ summary(mylogit)
 # tests
 null <- glm(satisfaction~1,data = data,family=binomial(link="logit"))
 lrtest(mylogit,null)
+
 
 logitgof(data$satisfaction, fitted(mylogit), g = 10)
 
@@ -217,4 +218,247 @@ stukel.test(model1)
 summary(linktest(model1))
 
 summary(model1)
+
+
+# ---------------------- model choice ---------------------------------------
+
+# Model choice: logit or ptobit?
+
+logit_model <- glm(satisfaction ~ 
+                    `Customer Type` 
+                  + `Arrival Delay in Minutes`
+                  + `Departure Delay in Minutes`
+                  
+                  + `Flight Distance`
+                  + `Departure/Arrival time convenient`
+                  
+                  + `Ease of Online booking`
+                  + `Online boarding`
+                  
+                  + `Seat comfort`
+                  + `Leg room service`
+                  
+                  + Gender
+                  
+                  + Age:`Gate location`
+                  + Age:`Ease of Online booking`
+                  + Age:`Checkin service`
+                  + Age:`Food and drink`
+                  
+                  + Cleanliness
+                  
+                  
+                  
+                  ,data = data, family = binomial(link = "logit"))
+
+logitgof(data$satisfaction, fitted(logit_model), g = 10)
+
+o.r.test(logit_model)
+stukel.test(logit_model)
+
+summary(linktest(logit_model))
+
+summary(logit_model)
+
+
+PseudoR2(logit_model)
+
+
+
+probit_model <- glm(satisfaction ~ 
+                     `Customer Type` 
+                   + `Arrival Delay in Minutes`
+                   + `Departure Delay in Minutes`
+                   
+                   + `Flight Distance`
+                   + `Departure/Arrival time convenient`
+                   
+                   + `Ease of Online booking`
+                   + `Online boarding`
+                   
+                   + `Seat comfort`
+                   + `Leg room service`
+                   
+                   + Gender
+                   
+                   + Age:`Gate location`
+                   + Age:`Ease of Online booking`
+                   + Age:`Checkin service`
+                   + Age:`Food and drink`
+                   
+                   + Cleanliness
+                   
+                   
+                   
+                   ,data = data, family = binomial(link = "probit"))
+
+logitgof(data$satisfaction, fitted(probit_model), g = 10)
+
+o.r.test(probit_model)
+stukel.test(probit_model)
+
+summary(linktest(probit_model))
+
+summary(probit_model)
+
+
+PseudoR2(probit_model)
+
+# Based on this analysis we should choose logit model as it passes all the tests and 
+# have lower AIC value
+
+
+# ------------------------General to specific approach --------------------------------
+
+# testing for joint insignificance of the levels
+
+linearHypothesis(logit_model, c("`Departure/Arrival time convenient`2 = 0",
+                                "`Departure/Arrival time convenient`3 = 0",
+                                "`Departure/Arrival time convenient`4 = 0",
+                                "`Departure/Arrival time convenient`5 = 0"))
+
+linearHypothesis(logit_model, c("`Ease of Online booking`2 = 0",
+                                "`Ease of Online booking`3 = 0",
+                                "`Ease of Online booking`4 = 0",
+                                "`Ease of Online booking`5 = 0"))
+
+linearHypothesis(logit_model,c("`Online boarding`2 = 0",
+                               "`Online boarding`3 = 0",
+                               "`Online boarding`4 = 0",
+                               "`Online boarding`5 = 0"))
+
+linearHypothesis(logit_model, c("`Seat comfort`2 = 0",
+                                "`Seat comfort`3 = 0",
+                                "`Seat comfort`4 = 0",
+                                "`Seat comfort`5 = 0"))
+
+linearHypothesis(logit_model, c("Cleanliness2 = 0",
+                                "Cleanliness3 = 0",
+                                "Cleanliness4 = 0",
+                                "Cleanliness5 = 0"))
+
+linearHypothesis(logit_model, c("Age:`Gate location`1 = 0",
+                                "Age:`Gate location`2 = 0",
+                                "Age:`Gate location`3 = 0",
+                                "Age:`Gate location`4 = 0",
+                                "Age:`Gate location`5 = 0"))
+
+linearHypothesis(logit_model, c("`Ease of Online booking`2:Age= 0",
+                                "`Ease of Online booking`3:Age= 0",
+                                "`Ease of Online booking`4:Age= 0",
+                                "`Ease of Online booking`5:Age= 0"))
+
+linearHypothesis(logit_model, c("Age:`Checkin service`2 = 0",
+                                "Age:`Checkin service`3 = 0",
+                                "Age:`Checkin service`4 = 0",
+                                "Age:`Checkin service`5 = 0"))
+
+
+# We cannot eliminate any of these variables as the levels are jointly significant 
+
+linearHypothesis(logit_model, "`Departure Delay in Minutes`= 0")
+
+# P-value > 5%, we fail to reject H0
+
+logit_model1 <- glm(satisfaction ~ 
+                      `Customer Type` 
+                    + `Arrival Delay in Minutes`
+                   
+                    
+                    + `Flight Distance`
+                    + `Departure/Arrival time convenient`
+                    
+                    + `Ease of Online booking`
+                    + `Online boarding`
+                    
+                    + `Seat comfort`
+                    + `Leg room service`
+                    
+                    + Gender
+                    
+                    + Age:`Gate location`
+                    + Age:`Ease of Online booking`
+                    + Age:`Checkin service`
+                    + Age:`Food and drink`
+                    
+                    + Cleanliness
+                    
+                    
+                    
+                    ,data = data, family = binomial(link = "logit"))
+
+summary(logit_model1)
+
+
+# tests for the new  model
+
+logitgof(data$satisfaction, fitted(logit_model1), g = 10)
+
+o.r.test(logit_model1)
+
+stukel.test(logit_model1)
+
+summary(linktest(logit_model1))
+
+summary(logit_model1)
+
+PseudoR2(logit_model1)
+
+# --------------------- marginal effects --------------------------------------
+
+# for mean observation
+
+logitmfx(formula = satisfaction ~ 
+           `Customer Type` 
+         + `Arrival Delay in Minutes`
+         
+         
+         + `Flight Distance`
+         + `Departure/Arrival time convenient`
+         
+         + `Ease of Online booking`
+         + `Online boarding`
+         
+         + `Seat comfort`
+         + `Leg room service`
+         
+         + Gender
+         
+         + Age:`Gate location`
+         + Age:`Ease of Online booking`
+         + Age:`Checkin service`
+         + Age:`Food and drink`
+         
+         + Cleanliness,
+         data = data,
+         atmean = T)
+
+
+# Average marginal effects 
+
+
+logitmfx(formula = satisfaction ~ 
+           `Customer Type` 
+         + `Arrival Delay in Minutes`
+         
+         
+         + `Flight Distance`
+         + `Departure/Arrival time convenient`
+         
+         + `Ease of Online booking`
+         + `Online boarding`
+         
+         + `Seat comfort`
+         + `Leg room service`
+         
+         + Gender
+         
+         + Age:`Gate location`
+         + Age:`Ease of Online booking`
+         + Age:`Checkin service`
+         + Age:`Food and drink`
+         
+         + Cleanliness,
+         data = data,
+         atmean = F)
 
