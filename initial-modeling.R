@@ -10,6 +10,7 @@ library("aod")
 library("logistf")
 library("car")
 library(generalhoslem)
+library("stargazer")
 
 
 options(scipen = 5)
@@ -86,7 +87,6 @@ par(mfrow = c(1, 1))
 source("linktest.R")
 source("AllGOFTests.R")
 
-
 # ---------------------- model choice ---------------------------------------
 
 # Model choice: logit or probit?
@@ -153,6 +153,8 @@ summary(probit_model)
 
 
 PseudoR2(probit_model)
+
+stargazer(logit_model,probit_model, type = "text")
 
 # Based on this analysis we should choose logit model as it passes all the tests and 
 # have lower AIC value
@@ -229,7 +231,7 @@ final_model <- glm(satisfaction ~
 
 summary(final_model)
 
-
+stargazer(logit_model,final_model,type = "text")
 # tests for the new  model
 
 null <- glm(satisfaction~1,data = data,family=binomial(link="logit"))
@@ -245,6 +247,20 @@ summary(linktest(final_model))
 
 
 PseudoR2(final_model)
+
+# -------------------------- EDA ----------------------------------------------
+
+plot_histograms <- function(data) {
+  
+  numeric_cols <- sapply(data, is.numeric)
+  data_numeric <- data[, numeric_cols]
+  for (col in colnames(data_numeric)) {
+    hist(data_numeric[[col]], main = paste("Histogram of", col), xlab = col, ylab = "Frequency", col = "blue", border = "black")
+  }
+}
+
+
+plot_histograms(data)
 
 # --------------------- marginal effects --------------------------------------
 
