@@ -87,12 +87,66 @@ par(mfrow = c(1, 1))
 source("linktest.R")
 source("AllGOFTests.R")
 
+# -------------------------- EDA ----------------------------------------------
+
+# 
+
+plot_histograms <- function(data) {
+  
+  numeric_cols <- sapply(data, is.numeric)
+  data_numeric <- data[, numeric_cols]
+  for (col in colnames(data_numeric)) {
+    hist(data_numeric[[col]], main = paste("Histogram of", col), xlab = col, ylab = "Frequency", col = "blue", border = "black")
+  }
+}
+
+
+plot_histograms(data)
+
+# barplots of categorical variables
+
+plot_categorical <- function(data) {
+
+  categorical_vars <- names(data)[sapply(data, is.factor)]
+  
+
+  for (var in categorical_vars) {
+  
+    barplot(table(data[[var]]),
+            main = paste("Bar plot of", var),
+            xlab = var,
+            ylab = "Frequency",
+            col = rainbow(length(unique(data[[var]]))))
+  }
+}
+
+
+plot_categorical(data)
+
+# ------------------------- feature selection -------------------------------
+
+table1 <- table(data$Class, data$`Flight Distance`)
+chisq.test(table1)
+
+table2 <- table(data$Class, data$`Flight Distance`)
+chisq.test(table2)
+
+table3 <- table(data$`Inflight wifi service`, data$`Inflight entertainment`)
+chisq.test(table3)
+
+table4 <- table(data$`On-board service`, data$`Inflight service`)
+chisq.test(table4)
+
+
 # ---------------------- model choice ---------------------------------------
 
 # Model choice: logit or probit?
 
 logit_model <- glm(satisfaction ~ 
-                    `Customer Type` 
+                    `Customer Type`
+                  + `On-board service`
+                  + `Baggage handling`
+                  + `Inflight entertainment`
                   + `Arrival Delay in Minutes`
                   + `Departure Delay in Minutes`
                   + `Flight Distance`
@@ -128,7 +182,10 @@ PseudoR2(logit_model)
 
 
 probit_model <- glm(satisfaction ~ 
-                     `Customer Type` 
+                     `Customer Type`
+                   + `On-board service`
+                   + `Baggage handling`
+                   + `Inflight entertainment`
                    + `Arrival Delay in Minutes`
                    + `Departure Delay in Minutes`
                    + `Flight Distance`
@@ -205,6 +262,15 @@ linearHypothesis(logit_model, c("Age:`Checkin service`2 = 0",
                                 "Age:`Checkin service`4 = 0",
                                 "Age:`Checkin service`5 = 0"))
 
+linearHypothesis(logit_model, c("`Inflight entertainment`2 = 0",
+                                "`Inflight entertainment`3 = 0",
+                                "`Inflight entertainment`4 = 0",
+                                "`Inflight entertainment`5 = 0"))
+
+linearHypothesis(logit_model, c("`On-board service`2 = 0",
+                                 "`On-board service`3 = 0",
+                                 "`On-board service`4 = 0",
+                                 "`On-board service`5 = 0"))
 
 # We cannot eliminate any of these variables as the levels are jointly significant 
 
@@ -213,21 +279,24 @@ linearHypothesis(logit_model, "`Departure Delay in Minutes`= 0")
 # P-value > 5%, we fail to reject H0
 
 final_model <- glm(satisfaction ~ 
-                      `Customer Type` 
-                    + `Arrival Delay in Minutes`
-                    + `Flight Distance`
-                    + `Departure/Arrival time convenient`
-                    + `Ease of Online booking`
-                    + `Online boarding`
-                    + `Seat comfort`
-                    + `Leg room service`
-                    + Gender
-                    + Age:`Gate location`
-                    + Age:`Ease of Online booking`
-                    + Age:`Checkin service`
-                    + Age:`Food and drink`
-                    + Cleanliness
-                    ,data = data, family = binomial(link = "logit"))
+                     `Customer Type`
+                   + `On-board service`
+                   + `Baggage handling`
+                   + `Inflight entertainment`
+                   + `Arrival Delay in Minutes`
+                   + `Flight Distance`
+                   + `Departure/Arrival time convenient`
+                   + `Ease of Online booking`
+                   + `Online boarding`
+                   + `Seat comfort`
+                   + `Leg room service`
+                   + Gender
+                   + Age:`Gate location`
+                   + Age:`Ease of Online booking`
+                   + Age:`Checkin service`
+                   + Age:`Food and drink`
+                   + Cleanliness
+                   ,data = data, family = binomial(link = "logit"))
 
 summary(final_model)
 
@@ -248,26 +317,17 @@ summary(linktest(final_model))
 
 PseudoR2(final_model)
 
-# -------------------------- EDA ----------------------------------------------
 
-plot_histograms <- function(data) {
-  
-  numeric_cols <- sapply(data, is.numeric)
-  data_numeric <- data[, numeric_cols]
-  for (col in colnames(data_numeric)) {
-    hist(data_numeric[[col]], main = paste("Histogram of", col), xlab = col, ylab = "Frequency", col = "blue", border = "black")
-  }
-}
-
-
-plot_histograms(data)
 
 # --------------------- marginal effects --------------------------------------
 
 # for mean observation
 
 logitmfx(formula = satisfaction ~ 
-           `Customer Type` 
+           `Customer Type`
+         + `On-board service`
+         + `Baggage handling`
+         + `Inflight entertainment`
          + `Arrival Delay in Minutes`
          + `Flight Distance`
          + `Departure/Arrival time convenient`
@@ -289,7 +349,10 @@ logitmfx(formula = satisfaction ~
 
 
 logitmfx(formula = satisfaction ~ 
-           `Customer Type` 
+           `Customer Type`
+         + `On-board service`
+         + `Baggage handling`
+         + `Inflight entertainment`
          + `Arrival Delay in Minutes`
          + `Flight Distance`
          + `Departure/Arrival time convenient`
