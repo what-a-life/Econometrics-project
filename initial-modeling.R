@@ -83,7 +83,8 @@ for (variable in variable_names) {
 data <- data %>%
   mutate(Log_Flight_Distance = log(`Flight Distance` + 1))
 
-par(mfrow = c(1, 1))
+data$wifi_good_bad  = as.factor(ifelse(as.numeric(data$`Inflight wifi service`) >= 3, 'Workable', 'Bad'))
+
 source("linktest.R")
 source("AllGOFTests.R")
 
@@ -123,19 +124,11 @@ plot_categorical <- function(data) {
 
 plot_categorical(data)
 
+
 # ------------------------- feature selection -------------------------------
 
-table1 <- table(data$Class, data$`Flight Distance`)
-chisq.test(table1)
 
-table2 <- table(data$Class, data$`Flight Distance`)
-chisq.test(table2)
 
-table3 <- table(data$`Inflight wifi service`, data$`Inflight entertainment`)
-chisq.test(table3)
-
-table4 <- table(data$`On-board service`, data$`Inflight service`)
-chisq.test(table4)
 
 
 # ---------------------- model choice ---------------------------------------
@@ -143,25 +136,30 @@ chisq.test(table4)
 # Model choice: logit or probit?
 
 logit_model <- glm(satisfaction ~ 
-                    `Customer Type`
-                  + `On-board service`
-                  + `Baggage handling`
-                  + `Inflight entertainment`
-                  + `Arrival Delay in Minutes`
-                  + `Departure Delay in Minutes`
-                  + `Flight Distance`
-                  + `Departure/Arrival time convenient`
-                  + `Ease of Online booking`
-                  + `Online boarding`
-                  + `Seat comfort`
-                  + `Leg room service`
-                  + Gender
-                  + Age:`Gate location`
-                  + Age:`Ease of Online booking`
-                  + Age:`Checkin service`
-                  + Age:`Food and drink`
-                  + Cleanliness
-                  ,data = data, family = binomial(link = "logit"))
+                     `Customer Type`
+                   + `On-board service`
+                   + `Baggage handling`
+                   + `Inflight entertainment`
+                   + `Arrival Delay in Minutes`
+                   + `Departure Delay in Minutes`
+                   + `Flight Distance`
+                   + `Departure/Arrival time convenient`
+                   + `Ease of Online booking`
+                   + `Online boarding`
+                   + `Seat comfort`
+                   + `Leg room service`
+                   + Gender
+                   + I(Age^2)
+                   + Age
+                   + `Gate location`
+                   + Age:`Gate location`
+                   + Age:`Ease of Online booking`
+                   + `Checkin service`
+                   + `Food and drink`
+                   + Cleanliness
+                   +`Inflight service`
+                   + wifi_good_bad
+                   ,data = data, family = binomial(link = "logit"))
 
 null <- glm(satisfaction~1,data = data,family=binomial(link="logit"))
 lrtest(logit_model,null)
@@ -182,25 +180,30 @@ PseudoR2(logit_model)
 
 
 probit_model <- glm(satisfaction ~ 
-                     `Customer Type`
-                   + `On-board service`
-                   + `Baggage handling`
-                   + `Inflight entertainment`
-                   + `Arrival Delay in Minutes`
-                   + `Departure Delay in Minutes`
-                   + `Flight Distance`
-                   + `Departure/Arrival time convenient`
-                   + `Ease of Online booking`
-                   + `Online boarding`
-                   + `Seat comfort`
-                   + `Leg room service`
-                   + Gender
-                   + Age:`Gate location`
-                   + Age:`Ease of Online booking`
-                   + Age:`Checkin service`
-                   + Age:`Food and drink`
-                   + Cleanliness
-                   ,data = data, family = binomial(link = "probit"))
+                      `Customer Type`
+                    + `On-board service`
+                    + `Baggage handling`
+                    + `Inflight entertainment`
+                    + `Arrival Delay in Minutes`
+                    + `Departure Delay in Minutes`
+                    + `Flight Distance`
+                    + `Departure/Arrival time convenient`
+                    + `Ease of Online booking`
+                    + `Online boarding`
+                    + `Seat comfort`
+                    + `Leg room service`
+                    + Gender
+                    + I(Age^2)
+                    + Age
+                    + `Gate location`
+                    + Age:`Gate location`
+                    + Age:`Ease of Online booking`
+                    + `Checkin service`
+                    + `Food and drink`
+                    + Cleanliness
+                    +`Inflight service`
+                    + wifi_good_bad
+                    ,data = data, family = binomial(link = "probit"))
 
 logitgof(data$satisfaction, fitted(probit_model), g = 10)
 
@@ -221,95 +224,43 @@ stargazer(logit_model,probit_model, type = "text")
 
 # testing for joint insignificance of the levels
 
-linearHypothesis(logit_model, c("Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0"))
+linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0"))
 
-linearHypothesis(logit_model, c("`Departure/Arrival time convenient`2 = 0",
-                                "`Departure/Arrival time convenient`3 = 0",
-                                "`Departure/Arrival time convenient`4 = 0",
-                                "`Departure/Arrival time convenient`5 = 0"))
-
-linearHypothesis(logit_model, c("`Ease of Online booking`2 = 0",
-                                "`Ease of Online booking`3 = 0",
-                                "`Ease of Online booking`4 = 0",
-                                "`Ease of Online booking`5 = 0"))
-
-linearHypothesis(logit_model,c("`Online boarding`2 = 0",
-                               "`Online boarding`3 = 0",
-                               "`Online boarding`4 = 0",
-                               "`Online boarding`5 = 0"))
-
-linearHypothesis(logit_model, c("`Seat comfort`2 = 0",
-                                "`Seat comfort`3 = 0",
-                                "`Seat comfort`4 = 0",
-                                "`Seat comfort`5 = 0"))
-
-linearHypothesis(logit_model, c("Cleanliness2 = 0",
-                                "Cleanliness3 = 0",
-                                "Cleanliness4 = 0",
-                                "Cleanliness5 = 0"))
-
-linearHypothesis(logit_model, c("Age:`Gate location`1 = 0",
-                                "Age:`Gate location`2 = 0",
-                                "Age:`Gate location`3 = 0",
-                                "Age:`Gate location`4 = 0",
-                                "Age:`Gate location`5 = 0"))
-
-linearHypothesis(logit_model, c("`Ease of Online booking`2:Age= 0",
-                                "`Ease of Online booking`3:Age= 0",
-                                "`Ease of Online booking`4:Age= 0",
-                                "`Ease of Online booking`5:Age= 0"))
-
-linearHypothesis(logit_model, c("Age:`Checkin service`2 = 0",
-                                "Age:`Checkin service`3 = 0",
-                                "Age:`Checkin service`4 = 0",
-                                "Age:`Checkin service`5 = 0"))
-
-linearHypothesis(logit_model, c("`Inflight entertainment`2 = 0",
-                                "`Inflight entertainment`3 = 0",
-                                "`Inflight entertainment`4 = 0",
-                                "`Inflight entertainment`5 = 0"))
-
-linearHypothesis(logit_model, c("`On-board service`2 = 0",
-                                 "`On-board service`3 = 0",
-                                 "`On-board service`4 = 0",
-                                 "`On-board service`5 = 0"))
-
-linearHypothesis(logit_model, c("Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0"))
 
 # We cannot eliminate any of these variables as the levels are jointly significant 
 logit_model1 <- glm(satisfaction ~ 
-                     `Customer Type`
-                   + `On-board service`
-                   + `Baggage handling`
-                   + `Inflight entertainment`
-                   + `Arrival Delay in Minutes`
-                   + `Departure Delay in Minutes`
-                   + `Flight Distance`
-                   + `Departure/Arrival time convenient`
-                   + `Ease of Online booking`
-                   + `Online boarding`
-                   + `Seat comfort`
-                   + `Leg room service`
-                   + Gender
-                   + Age:`Gate location`
-                   + Age:`Ease of Online booking`
-                   + Age:`Checkin service`
-                   + Cleanliness
-                   ,data = data, family = binomial(link = "logit"))
+                      `Customer Type`
+                    + `On-board service`
+                    + `Baggage handling`
+                    + `Inflight entertainment`
+                    + `Arrival Delay in Minutes`
+                    + `Flight Distance`
+                    + `Departure/Arrival time convenient`
+                    + `Ease of Online booking`
+                    + `Online boarding`
+                    + `Seat comfort`
+                    + `Leg room service`
+                    + Gender
+                    + I(Age^2)
+                    + Age
+                    + `Gate location`
+                    + Age:`Gate location`
+                    + Age:`Ease of Online booking`
+                    + `Checkin service`
+                    + `Food and drink`
+                    + Cleanliness
+                    +`Inflight service`
+                    + wifi_good_bad
+                    ,data = data, family = binomial(link = "logit"))
 
 
+summary(logit_model1)
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                 "Age:`Food and drink`2 = 0",
-                 "Age:`Food and drink`3 = 0",
-                 "Age:`Food and drink`4 = 0",
-                 "Age:`Food and drink`5 = 0"))
+                 "`Food and drink`2 = 0",
+                 "`Food and drink`3 = 0",
+                 "`Food and drink`4 = 0",
+                 "`Food and drink`5 = 0"))
 
 logit_model2 <- glm(satisfaction ~ 
                       `Customer Type`
@@ -324,19 +275,25 @@ logit_model2 <- glm(satisfaction ~
                     + `Seat comfort`
                     + `Leg room service`
                     + Gender
+                    + I(Age^2)
+                    + Age
+                    + `Gate location`
                     + Age:`Gate location`
                     + Age:`Ease of Online booking`
-                    + Age:`Checkin service`
+                    + `Checkin service`
                     + Cleanliness
+                    +`Inflight service`
+                    + wifi_good_bad
                     ,data = data, family = binomial(link = "logit"))
+
 
 summary(logit_model2)
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
                                 "`Ease of Online booking`2:Age= 0",
                                 "`Ease of Online booking`3:Age= 0",
                                 "`Ease of Online booking`4:Age= 0",
@@ -346,62 +303,114 @@ linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
 
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
-                                "Age:`Gate location`1 = 0",
                                 "Age:`Gate location`2 = 0",
                                 "Age:`Gate location`3 = 0",
                                 "Age:`Gate location`4 = 0",
-                                "Age:`Gate location`5 = 0"
+                                "Age:`Gate location`5 = 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0"
                                 ))
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
-                                "Age:`Checkin service`2 = 0",
-                                "Age:`Checkin service`3 = 0",
-                                "Age:`Checkin service`4 = 0",
-                                "Age:`Checkin service`5 = 0"))
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
+                                "`Inflight service`2 = 0",
+                                "`Inflight service`3 = 0",
+                                "`Inflight service`4 = 0",
+                                "`Inflight service`5 = 0"))
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
+                                "`Checkin service`2 = 0",
+                                "`Checkin service`3 = 0",
+                                "`Checkin service`4 = 0",
+                                "`Checkin service`5 = 0"))
+
+linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
                                 "Cleanliness2 = 0",
                                 "Cleanliness3 = 0",
                                 "Cleanliness4 = 0",
                                 "Cleanliness5 = 0"))
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
-                                "`On-board service`2 = 0",
-                                "`On-board service`3 = 0",
-                                "`On-board service`4 = 0",
-                                "`On-board service`5 = 0"))
+                                "`Gate location`2 = 0",
+                                "`Gate location`3 = 0",
+                                "`Gate location`4 = 0",
+                                "`Gate location`5 = 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0"
+))
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
+                                "`Leg room service`2  = 0",
+                                "`Leg room service`3  = 0",
+                                "`Leg room service`4  = 0",
+                                "`Leg room service`5  = 0"))
+
+linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
+                                "`Seat comfort`2 = 0",
+                                "`Seat comfort`3 = 0",
+                                "`Seat comfort`4 = 0",
+                                "`Seat comfort`5 = 0"
+                                ))
+
+linearHypothesis(logit_model,c("`Departure Delay in Minutes` = 0",
+                               "`Food and drink`2 = 0",
+                               "`Food and drink`3 = 0",
+                               "`Food and drink`4 = 0",
+                               "`Food and drink`5 = 0",
+                              "`Online boarding`2 = 0",
+                               "`Online boarding`3 = 0",
+                               "`Online boarding`4 = 0",
+                               "`Online boarding`5 = 0"))
+
+
+linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
+                                "`Ease of Online booking`2 = 0",
+                                "`Ease of Online booking`3 = 0",
+                                "`Ease of Online booking`4 = 0",
+                                "`Ease of Online booking`5 = 0"))
+
+linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
                                 "`Departure/Arrival time convenient`2 = 0",
                                 "`Departure/Arrival time convenient`3 = 0",
                                 "`Departure/Arrival time convenient`4 = 0",
                                 "`Departure/Arrival time convenient`5 = 0"))
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
-                                "Age:`Food and drink`2 = 0",
-                                "Age:`Food and drink`3 = 0",
-                                "Age:`Food and drink`4 = 0",
-                                "Age:`Food and drink`5 = 0",
+                                "`Food and drink`2 = 0",
+                                "`Food and drink`3 = 0",
+                                "`Food and drink`4 = 0",
+                                "`Food and drink`5 = 0",
                                 "`Baggage handling`2 = 0",
                                 "`Baggage handling`3 = 0",
                                 "`Baggage handling`4 = 0",
@@ -421,15 +430,20 @@ final_model <- glm(satisfaction ~
                    + `Seat comfort`
                    + `Leg room service`
                    + Gender
+                   + I(Age^2)
+                   + Age
+                   + `Gate location`
                    + Age:`Gate location`
                    + Age:`Ease of Online booking`
-                   + Age:`Checkin service`
+                   + `Checkin service`
                    + Cleanliness
+                   +`Inflight service`
+                   + wifi_good_bad
                    ,data = data, family = binomial(link = "logit"))
 
 summary(final_model)
 
-stargazer(logit_model,final_model,type = "text")
+stargazer(logit_model,logit_model1,final_model,type = "text")
 # tests for the new  model
 
 null <- glm(satisfaction~1,data = data,family=binomial(link="logit"))
@@ -465,11 +479,15 @@ logitmfx(formula = satisfaction ~
          + `Seat comfort`
          + `Leg room service`
          + Gender
+         + I(Age^2)
+         + Age
+         + `Gate location`
          + Age:`Gate location`
          + Age:`Ease of Online booking`
-         + Age:`Checkin service`
-         + Age:`Food and drink`
-         + Cleanliness,
+         + `Checkin service`
+         + Cleanliness
+         +`Inflight service`
+         + wifi_good_bad,
          data = data,
          atmean = T)
 
@@ -490,11 +508,15 @@ logitmfx(formula = satisfaction ~
          + `Seat comfort`
          + `Leg room service`
          + Gender
+         + I(Age^2)
+         + Age
+         + `Gate location`
          + Age:`Gate location`
          + Age:`Ease of Online booking`
-         + Age:`Checkin service`
-         + Age:`Food and drink`
-         + Cleanliness,
+         + `Checkin service`
+         + Cleanliness
+         +`Inflight service`
+         + wifi_good_bad,
          data = data,
          atmean = F)
 
