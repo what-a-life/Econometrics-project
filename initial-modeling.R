@@ -80,9 +80,6 @@ for (variable in variable_names) {
   data <- process_variable(data, variable)
 }
 
-data <- data %>%
-  mutate(Log_Flight_Distance = log(`Flight Distance` + 1))
-
 data$wifi_good_bad  = as.factor(ifelse(as.numeric(data$`Inflight wifi service`) >= 3, 'Workable', 'Bad'))
 
 source("linktest.R")
@@ -124,11 +121,55 @@ plot_categorical <- function(data) {
 
 plot_categorical(data)
 
+ggplot(data, aes(x = Gender, fill = as.factor(satisfaction))) +
+  geom_bar(position = "dodge") +
+  scale_fill_manual(values = c("0" = "steelblue", "1" = "navy"), 
+                    name = "Satisfaction",
+                    labels = c("Not Satisfied", "Satisfied")) +
+  labs(title = "Satisfaction by Gender",
+       x = "Gender",
+       y = "Count of Customers") +
+  theme_minimal()
+
+ggplot(data, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of Age",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+
+# Histogram for Flight Distance
+ggplot(data, aes(x = `Flight Distance`)) +
+  geom_histogram(binwidth = 100, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of Flight Distance",
+       x = "Flight Distance",
+       y = "Count") +
+  theme_minimal()
+
+ggplot(data, aes(x = wifi_good_bad, fill = as.factor(satisfaction))) +
+  geom_bar(position = "dodge") +
+  scale_fill_manual(values = c("0" = "steelblue", "1" = "navy"), 
+                    name = "Satisfaction",
+                    labels = c("Not Satisfied", "Satisfied")) +
+  labs(title = "Satisfaction by WiFi usefulness",
+       x = "WiFi level",
+       y = "Count of Customers") +
+  theme_minimal()
+
 
 # ------------------------- feature selection -------------------------------
 
+table1 <- table(data$`Type of Travel`, data$`Departure/Arrival time convenient`)
+chisq.test(table1)
 
+table2 <- table(data$`Type of Travel`, data$wifi_good_bad)
+chisq.test(table2)
 
+table3 <- table(data$Class, data$`Seat comfort`)
+chisq.test(table3)
+
+table4<- table(data$Class, data$`Leg room service`)
+chisq.test(table4)
 
 
 # ---------------------- model choice ---------------------------------------
@@ -465,6 +506,8 @@ PseudoR2(final_model)
 # --------------------- marginal effects --------------------------------------
 
 # for mean observation
+
+options(scipen = 5, digits=5)
 
 logitmfx(formula = satisfaction ~ 
            `Customer Type`
