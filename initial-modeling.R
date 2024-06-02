@@ -13,7 +13,7 @@ library(generalhoslem)
 library("stargazer")
 
 
-options(scipen = 5)
+options(scipen = 5, digits = 5)
 
 data <- read_csv('test.csv')
 
@@ -80,8 +80,6 @@ for (variable in variable_names) {
   data <- process_variable(data, variable)
 }
 
-data <- data %>%
-  mutate(Log_Flight_Distance = log(`Flight Distance` + 1))
 
 data$wifi_good_bad  = as.factor(ifelse(as.numeric(data$`Inflight wifi service`) >= 3, 'Workable', 'Bad'))
 
@@ -443,7 +441,7 @@ final_model <- glm(satisfaction ~
 
 summary(final_model)
 
-stargazer(logit_model,logit_model1,final_model,type = "text")
+stargazer(probit_model,logit_model,logit_model1,final_model,type = "text")
 # tests for the new  model
 
 null <- glm(satisfaction~1,data = data,family=binomial(link="logit"))
