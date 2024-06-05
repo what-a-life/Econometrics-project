@@ -62,7 +62,8 @@ variable_names <- c("Inflight wifi service",
                     "Cleanliness")
 
 
-
+#### Function to automatically make factors out of satisfaction of service variables
+#### The Function removes values 0 which are treated as NA = lack of answer in the survey
 
 process_variable <- function(data, variable_name) {
   data <- data %>% filter(!(data[[variable_name]] %in% 0))
@@ -80,6 +81,7 @@ for (variable in variable_names) {
   data <- process_variable(data, variable)
 }
 
+#### Own introduced variable - workable wifi means it is good enough to work with it (there is no such word, but we already made the tests and everything)
 
 data$wifi_good_bad  = as.factor(ifelse(as.numeric(data$`Inflight wifi service`) >= 3, 'Workable', 'Bad'))
 
@@ -122,6 +124,8 @@ plot_categorical <- function(data) {
 
 plot_categorical(data)
 
+## distribution of arget variable across the gender levels
+
 ggplot(data, aes(x = Gender, fill = as.factor(satisfaction))) +
   geom_bar(position = "dodge") +
   scale_fill_manual(values = c("0" = "steelblue", "1" = "navy"), 
@@ -132,6 +136,7 @@ ggplot(data, aes(x = Gender, fill = as.factor(satisfaction))) +
        y = "Count of Customers") +
   theme_minimal()
 
+## histogram of age
 ggplot(data, aes(x = Age)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
   labs(title = "Histogram of Age",
@@ -147,6 +152,7 @@ ggplot(data, aes(x = `Flight Distance`)) +
        y = "Count") +
   theme_minimal()
 
+## distirbution of target variable across the own introduced WiFi variable
 ggplot(data, aes(x = wifi_good_bad, fill = as.factor(satisfaction))) +
   geom_bar(position = "dodge") +
   scale_fill_manual(values = c("0" = "steelblue", "1" = "navy"), 
@@ -171,6 +177,8 @@ chisq.test(table3)
 
 table4<- table(data$Class, data$`Leg room service`)
 chisq.test(table4)
+
+### in all tests we reject the null hhypothesis that the variables are independent due to p-value < 0.05 significance level
 
 
 # ---------------------- model choice ---------------------------------------
@@ -268,6 +276,8 @@ stargazer(logit_model,probit_model, type = "text")
 
 linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0"))
 
+# P-value > 5%, we fail to reject H0 that variables are jointly statistically insignificant, so we can remove `Departure Delay in Minutes`
+
 
 # We cannot eliminate any of these variables as the levels are jointly significant 
 logit_model1 <- glm(satisfaction ~ 
@@ -303,6 +313,9 @@ linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
                  "`Food and drink`3 = 0",
                  "`Food and drink`4 = 0",
                  "`Food and drink`5 = 0"))
+
+# P-value > 5%, we fail to reject H0 that variables are jointly statistically insignificant, so we can remove `Departure Delay in Minutes`
+# jointly with 'Food and drink'
 
 logit_model2 <- glm(satisfaction ~ 
                       `Customer Type`
@@ -457,7 +470,11 @@ linearHypothesis(logit_model, c("`Departure Delay in Minutes`= 0",
                                 "`Baggage handling`3 = 0",
                                 "`Baggage handling`4 = 0",
                                 "`Baggage handling`5 = 0"))
-# P-value > 5%, we fail to reject H0
+
+
+# Besides `Departure Delay in Minutes` jointly with 'Food and Drinks'
+# P-value < 5%, we reject H0 that variables are jointly statistically insignificant, so we cannot remove anything else with GETS
+
 
 final_model <- glm(satisfaction ~ 
                      `Customer Type`
@@ -486,10 +503,14 @@ final_model <- glm(satisfaction ~
 summary(final_model)
 
 stargazer(probit_model,logit_model,logit_model1,final_model,type = "text")
+
 # tests for the new  model
 
 null <- glm(satisfaction~1,data = data,family=binomial(link="logit"))
 lrtest(final_model,null)
+
+# we reject H0 that restricted model is better - the variables in model are jointly statistically significant
+# due to pvalue < 0.05 significance level
 
 logitgof(data$satisfaction, fitted(final_model), g = 10)
 
@@ -497,12 +518,16 @@ o.r.test(final_model)
 
 stukel.test(final_model)
 
+# all diagnostic test passed, specification is correct
+# pvalue > 0.05 so we fail to reject the null that specification is correct
+
 summary(linktest(final_model))
 
+# yhat2 statistically insiginifcant, yhat significant - model is correct
 
 PseudoR2(final_model)
 
-
+# 0.88 Count, 0.72 Adj.Count, 0.75 McKelvey-Zavoina
 
 # --------------------- marginal effects --------------------------------------
 
