@@ -13,6 +13,12 @@ library(generalhoslem)
 library("stargazer")
 
 
+## Please set working directory to folder containing codes location before proceeding
+
+## Uploading specification test for the model
+source("linktest.R")
+source("AllGOFTests.R")
+
 options(scipen = 5, digits = 5)
 
 data <- read_csv('test.csv')
@@ -85,8 +91,6 @@ for (variable in variable_names) {
 
 data$wifi_good_bad  = as.factor(ifelse(as.numeric(data$`Inflight wifi service`) >= 3, 'Workable', 'Bad'))
 
-source("linktest.R")
-source("AllGOFTests.R")
 
 # -------------------------- EDA ----------------------------------------------
 
