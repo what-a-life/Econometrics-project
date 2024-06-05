@@ -12,3 +12,5 @@ code to reproduce the findings - code.R
 code to calculate the Linktest - linktest.R
 
 code to calculate the Hosmer Lemeshow, Osius-Rojek, Stukel  - AIIGOFTests.R
+
+Paper - Final paper 
